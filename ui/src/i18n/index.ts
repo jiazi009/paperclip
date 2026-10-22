@@ -2,24 +2,13 @@ import i18n, { type InitOptions, type TOptions } from "i18next";
 import { initReactI18next, useTranslation as useReactI18nextTranslation } from "react-i18next";
 
 import { DEFAULT_LOCALE, i18nextResources, supportedLocales } from "./locales";
+import { matchSupportedLocale as matchLocale, resolveLocalePreference } from "./locale-preference";
 
 export const LOCALE_STORAGE_KEY = "paperclip.locale";
 const RTL_LANGUAGES = new Set(["ar", "fa", "he", "ur"]);
 
-function matchSupportedLocale(candidate: string): string | null {
-  const normalized = candidate.replace("_", "-").toLowerCase();
-  const exact = supportedLocales.find((locale) => locale.toLowerCase() === normalized);
-  if (exact) return exact;
-
-  if (normalized === "zh" || normalized.startsWith("zh-cn") || normalized.startsWith("zh-sg")) {
-    return supportedLocales.includes("zh-CN") ? "zh-CN" : null;
-  }
-  if (normalized.startsWith("zh-tw") || normalized.startsWith("zh-hk") || normalized.startsWith("zh-mo")) {
-    return supportedLocales.includes("zh-TW") ? "zh-TW" : null;
-  }
-
-  const base = normalized.split("-")[0];
-  return supportedLocales.find((locale) => locale.toLowerCase() === base) ?? null;
+function matchSupportedLocale(candidate: string) {
+  return matchLocale(candidate, supportedLocales);
 }
 
 export function applyDocumentLocale(locale: string) {
@@ -30,22 +19,17 @@ export function applyDocumentLocale(locale: string) {
 }
 
 function resolveInitialLocale(): string {
-  if (typeof window === "undefined") return DEFAULT_LOCALE;
-  try {
-    const persisted = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (persisted) {
-      const match = matchSupportedLocale(persisted);
-      if (match) return match;
-    }
-    for (const candidate of window.navigator?.languages ?? [window.navigator?.language]) {
-      if (!candidate) continue;
-      const match = matchSupportedLocale(candidate);
-      if (match) return match;
-    }
-  } catch {
-    // localStorage/navigator unavailable (e.g. hardened privacy settings).
+  let persisted: string | null = null;
+  if (typeof window !== "undefined") {
+    try {
+      persisted = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+    } catch {}
   }
-  return DEFAULT_LOCALE;
+  return resolveLocalePreference({
+    persisted,
+    defaultLocale: import.meta.env.VITE_DEFAULT_LOCALE,
+    browserLanguages: typeof navigator === "undefined" ? [] : navigator.languages?.length ? navigator.languages : [navigator.language],
+  }, supportedLocales, DEFAULT_LOCALE);
 }
 
 const initialLocale = resolveInitialLocale();

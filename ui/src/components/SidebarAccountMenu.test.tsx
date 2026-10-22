@@ -3,6 +3,7 @@
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { LOCALE_STORAGE_KEY, setLocale } from "@/i18n";
 import { queryKeys } from "../lib/queryKeys";
 import { SidebarAccountMenu } from "./SidebarAccountMenu";
 import { SidebarAccountMenu as ProductionSidebarAccountMenu } from "./SidebarAccountMenu.production";
@@ -153,6 +154,34 @@ describe("SidebarAccountMenu", () => {
     document.body.innerHTML = "";
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it.each([SidebarAccountMenu, ProductionSidebarAccountMenu])("persists language choices in both account menus (%#)", async (AccountMenu) => {
+    await setLocale("en");
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const root = createRoot(container);
+    try {
+      await act(async () => {
+        root.render(<QueryClientProvider client={queryClient}><TooltipProvider><AccountMenu open /></TooltipProvider></QueryClientProvider>);
+      });
+      await flushReact();
+      const chinese = Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent === "简中");
+      expect(chinese).toBeDefined();
+      await act(async () => { chinese!.click(); });
+      await flushReact();
+      expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-CN");
+      expect(document.documentElement.lang).toBe("zh-CN");
+      expect(chinese?.getAttribute("aria-pressed")).toBe("true");
+      const english = Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent === "EN");
+      await act(async () => { english!.click(); });
+      expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("en");
+      expect(document.documentElement.lang).toBe("en");
+    } finally {
+      await act(() => root.unmount());
+      queryClient.clear();
+      await setLocale("en");
+      window.localStorage.removeItem(LOCALE_STORAGE_KEY);
+    }
   });
 
   describe.each([SidebarAccountMenu, ProductionSidebarAccountMenu])("staging commit (%#)", (AccountMenu) => {

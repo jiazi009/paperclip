@@ -31,3 +31,14 @@ pnpm --filter @paperclipai/ui build
 
 `check:i18n` scans production TypeScript/TSX files, fails on uncovered UI
 phrases, and verifies that dynamic placeholders are preserved exactly.
+
+## Deployment language
+
+Set `VITE_DEFAULT_LOCALE=zh-CN` before building the UI to make Chinese the
+installation default. The runtime uses a saved user choice first, then this
+build setting, then the browser language, then English. Invalid or unsupported
+values are skipped. A saved English choice still wins after reload.
+
+The account menus in both UI layouts expose the language switcher. Blocked
+local storage does not stop browser language detection. Chinese script tags
+such as `zh-Hans` and `zh-Hant-HK` resolve to the matching registered catalog.

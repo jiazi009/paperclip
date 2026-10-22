@@ -7,7 +7,7 @@ type Node = { type: string; start: number; end: number; [key: string]: unknown }
 
 const helper = "__paperclipTranslateUiLiteral";
 const localeHook = "__paperclipUseUiLiteralLocale";
-const translatableAttributes = /^(?:alt|aria-description|aria-label|buttonLabel|cancelLabel|confirmLabel|description|empty(?:Message|Text)|error(?:Message|Text)?|help(?:Text)?|hint|label|message|placeholder|subtitle|title|tooltip)$/i;
+const translatableAttributes = /^(?:alt|aria-description|aria-label|buttonLabel|cancelLabel|confirmLabel|assignLabel|runLabel|chooseLabel|sectionTitles|description|empty(?:Message|Text)|error(?:Message|Text)?|help(?:Text)?|hint|label|message|placeholder|subtitle|title|tooltip)$/i;
 const userFeedbackCalls = /(?:^|\.)(?:addToast|alert|confirm|prompt|showToast|toast)$|(?:^|\.)(?:toast|toasts)\.(?:error|info|success|warn|warning)$/;
 const skippedElements = new Set(["code", "kbd", "noscript", "pre", "script", "style", "textarea"]);
 const transparentWrappers = new Set([
@@ -174,6 +174,11 @@ export function staticUiLocalization(): Plugin {
           collectRenderedExpression(node.left as Node);
           collectRenderedExpression(node.right as Node);
           return;
+        }
+        if (node.type === "ObjectExpression") {
+          for (const property of node.properties as Node[]) {
+            if (property.type === "Property") collectRenderedExpression(property.value as Node);
+          }
         }
         if (node.type === "ArrayExpression") {
           for (const element of node.elements as Array<Node | null>) {
