@@ -2723,10 +2723,6 @@ function OnboardingWizardInner({
         <div className="fixed inset-0 z-50 bg-background" />
         {/* A deliberate hook for "the wizard mounted".
 
-          <div className="absolute top-4 right-4 z-10">
-            <LocaleSwitcher compact />
-          </div>
-
             The tests that assert it opens used to prove it by finding any text
             in the document — which, with the front door mocked to null in that
             suite, was only ever the close button's screen-reader label. Removing
@@ -2738,6 +2734,9 @@ function OnboardingWizardInner({
           className="fixed inset-0 z-50 flex"
           onKeyDown={handleKeyDown}
         >
+          <div className="absolute top-4 right-4 z-10">
+            <LocaleSwitcher compact />
+          </div>
           {/* Form column — the wizard opens directly on step 1, so there is no
               front-door choice ahead of it, and it fills the width on every
               step (the mission step's half-width split is gone). */}
