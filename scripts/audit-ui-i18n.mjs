@@ -16,6 +16,13 @@ const { parseSync } = await import(pathToFileURL(uiRequire.resolve("vite")).href
 const skippedFilePatterns = [/\.d\.ts$/, /\.test\.tsx?$/, /\.stories\.tsx?$/];
 const translatableAttributes = /^(?:alt|aria-description|aria-label|buttonLabel|cancelLabel|confirmLabel|description|empty(?:Message|Text)|error(?:Message|Text)?|help(?:Text)?|hint|label|message|placeholder|subtitle|title|tooltip)$/i;
 const uiObjectProperties = /^(?:ariaLabel|buttonLabel|cancelLabel|confirmLabel|description|empty(?:Message|Text)|error(?:Message|Text)?|help(?:Text)?|hint|label|message|placeholder|subtitle|title|tooltip)$/i;
+const transparentWrappers = new Set([
+  "ParenthesizedExpression",
+  "TSAsExpression",
+  "TSTypeAssertion",
+  "TSNonNullExpression",
+  "TSSatisfiesExpression",
+]);
 const userFeedbackCalls = /(?:^|\.)(?:addToast|alert|confirm|prompt|showToast|toast)$|(?:^|\.)(?:toast|toasts)\.(?:error|info|success|warn|warning)$/;
 
 function walkFiles(directory) {
@@ -106,6 +113,8 @@ function scanFile(filePath) {
     });
   }
 
+  // Mirrors collectRenderedExpression() in ui/vite-static-i18n.ts: only the
+  // literals the build transform actually wraps count as rendered UI copy.
   function collectExpression(node, kind) {
     if (node.type === "CallExpression") {
       const name = callName(node.callee);
@@ -116,12 +125,22 @@ function scanFile(filePath) {
       add(kind, node.start, text);
       return;
     }
-    if (
-      node.type === "JSXElement" ||
-      node.type === "JSXFragment" ||
-      node.type === "JSXAttribute"
-    ) return;
-    for (const child of children(node)) collectExpression(child, kind);
+    if (transparentWrappers.has(node.type)) {
+      collectExpression(node.expression, kind);
+    } else if (node.type === "ConditionalExpression") {
+      collectExpression(node.consequent, kind);
+      collectExpression(node.alternate, kind);
+    } else if (node.type === "LogicalExpression") {
+      if (node.operator !== "&&") collectExpression(node.left, kind);
+      collectExpression(node.right, kind);
+    } else if (node.type === "BinaryExpression" && node.operator === "+") {
+      collectExpression(node.left, kind);
+      collectExpression(node.right, kind);
+    } else if (node.type === "ArrayExpression") {
+      for (const element of node.elements) {
+        if (element && element.type !== "SpreadElement") collectExpression(element, kind);
+      }
+    }
   }
 
   function visit(node, parent) {
@@ -162,6 +181,13 @@ function scanFile(filePath) {
       if (text !== null) add(`parameter:${node.left.name}`, node.right.start, text);
     }
 
+    // Explicit render-time translations must resolve in the catalogs too.
+    if (node.type === "CallExpression" && callName(node.callee) === "translateUiLiteral") {
+      const [argument] = node.arguments;
+      const text = argument ? expressionText(argument) : null;
+      if (text !== null) add("explicit:translateUiLiteral", argument.start, text);
+    }
+
     if (node.type === "CallExpression" && userFeedbackCalls.test(callName(node.callee))) {
       for (const argument of node.arguments) {
         const text = expressionText(argument);
@@ -199,6 +225,12 @@ for (const finding of findings) {
 }
 
 const result = [...unique.values()].sort((left, right) => left.text.localeCompare(right.text));
+// The build transform never rewrites object properties or parameter defaults:
+// their values are often compared or sent to the API. They are listed for
+// reference, but only count as translated once rendered via t() or
+// translateUiLiteral(), so they are excluded from --check coverage.
+const untransformedKind = /^(?:property|parameter):/;
+const rendered = result.filter((entry) => entry.occurrences.some((occurrence) => !untransformedKind.test(occurrence.kind)));
 const jsonMode = process.argv.includes("--json");
 const checkMode = process.argv.includes("--check");
 
@@ -217,7 +249,7 @@ if (checkMode) {
     ...JSON.parse(fs.readFileSync(path.join(uiRoot, "i18n", "legacy-zh-CN.json"), "utf8")),
     ...JSON.parse(fs.readFileSync(path.join(uiRoot, "i18n", "legacy-zh-CN.overrides.json"), "utf8")),
   };
-  const uncovered = result.filter(({ text }) => !keyedEnglish.has(text) && typeof legacyChinese[text] !== "string");
+  const uncovered = rendered.filter(({ text }) => !keyedEnglish.has(text) && typeof legacyChinese[text] !== "string");
   const placeholderMismatches = Object.entries(legacyChinese).filter(([english, chinese]) => {
     const source = [...english.matchAll(/{{value\d+}}/g)].map((match) => match[0]).sort();
     const target = [...chinese.matchAll(/{{value\d+}}/g)].map((match) => match[0]).sort();
@@ -236,7 +268,8 @@ if (checkMode) {
     process.exit(1);
   }
 
-  console.log(`i18n audit passed: ${files.length} TypeScript files, ${result.length} unique UI phrases, 0 uncovered.`);
+  console.log(`i18n audit passed: ${files.length} TypeScript files, ${rendered.length} unique UI phrases, 0 uncovered.`);
+  console.log(`${result.length - rendered.length} phrases appear only in object properties or parameter defaults; the build transform leaves these untranslated.`);
   process.exit(0);
 }
 

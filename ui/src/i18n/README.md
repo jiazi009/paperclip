@@ -15,19 +15,28 @@ user-authored text is never translated.
 
 ## Updating copy
 
-Run `pnpm i18n:audit` to locate source literals. Add normal product copy to the
+Run `node scripts/audit-ui-i18n.mjs` from the repository root to locate source
+literals (add `--json` for machine-readable output). Add normal product copy to the
 keyed locale files when practical. Otherwise add the English source phrase and
 its Chinese translation to `legacy-zh-CN.json`. Put deliberate terminology
 corrections in `legacy-zh-CN.overrides.json`; overrides win over generated or
 bulk-imported legacy entries.
 
-Before committing, run:
+The build transform (`ui/vite-static-i18n.ts`) only wraps JSX text, the
+translatable JSX attributes, literals rendered directly in JSX expressions, and
+user-feedback calls. It never rewrites object properties or parameter defaults
+(for example `{ label: "Recent Runs" }` passed to a tab bar), because those
+values are often compared in code or sent to the API. Translate such labels
+where they are defined or rendered with `t()` or `translateUiLiteral()`.
+
+Before committing, run from the repository root:
 
 ```sh
-pnpm check:i18n
+node scripts/audit-ui-i18n.mjs --check
 pnpm --filter @paperclipai/ui typecheck
 pnpm --filter @paperclipai/ui build
 ```
 
-`check:i18n` scans production TypeScript/TSX files, fails on uncovered UI
-phrases, and verifies that dynamic placeholders are preserved exactly.
+`--check` scans production TypeScript/TSX files, fails on uncovered phrases that
+the build transform or an explicit `translateUiLiteral()` call renders, and
+verifies that dynamic placeholders are preserved exactly.
