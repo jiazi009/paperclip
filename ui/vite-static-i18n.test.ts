@@ -51,4 +51,40 @@ describe("staticUiLocalization", () => {
     expect(code).toContain('__paperclipTranslateUiLiteral("Codex is ready")');
     expect(code).toContain('__paperclipTranslateUiLiteral("Choose an adapter")');
   });
+
+  it("decodes JSX character references before handing text to the helper", async () => {
+    const plugin = staticUiLocalization();
+    const source = `
+      export function Footer() {
+        return <footer title="Tom &amp; Jerry&#39;s &quot;den&quot;">
+          Save &amp; exit &rarr; next &#x2014; done&hellip; &bogus;
+        </footer>;
+      }
+    `;
+    const transform = plugin.transform;
+    if (!transform) throw new Error("transform hook missing");
+    const handler = typeof transform === "function" ? transform : transform.handler;
+    const result = await handler.call({} as never, source, "/repo/ui/src/Footer.tsx", {} as never);
+    const code = typeof result === "string" ? result : result?.code;
+
+    expect(code).toContain(`__paperclipTranslateUiLiteral(${JSON.stringify(`Tom & Jerry's "den"`)})`);
+    expect(code).toContain(`__paperclipTranslateUiLiteral(${JSON.stringify("Save & exit \u2192 next \u2014 done\u2026 &bogus;")})`);
+    expect(code).not.toContain("&amp;");
+  });
+
+  it("leaves object property strings for explicit translation", async () => {
+    const plugin = staticUiLocalization();
+    const source = `
+      export function Tabs() {
+        const items = [{ value: "runs", label: "Recent Runs" }];
+        return <PageTabBar items={items} />;
+      }
+    `;
+    const transform = plugin.transform;
+    if (!transform) throw new Error("transform hook missing");
+    const handler = typeof transform === "function" ? transform : transform.handler;
+    const result = await handler.call({} as never, source, "/repo/ui/src/Tabs.tsx", {} as never);
+
+    expect(result).toBeNull();
+  });
 });

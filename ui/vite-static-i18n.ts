@@ -1,5 +1,6 @@
 import path from "node:path";
 import { parseSync, type Plugin } from "vite";
+import { decodeJsxEntities } from "./vite-jsx-entities";
 
 // The static localization pass walks the ESTree/oxc AST that Vite already ships
 // (TypeScript 7 no longer exposes the JavaScript compiler API).
@@ -74,6 +75,10 @@ function containsEnglish(value: string) {
 // Matches the whitespace folding performed for JSX text by React's compiler.
 function cleanJsxText(value: string) {
   const lines = value.replace(/\r\n?/g, "\n").split("\n");
+  let lastNonEmptyLine = 0;
+  for (let index = 0; index < lines.length; index += 1) {
+    if (/[^ \t]/.test(lines[index])) lastNonEmptyLine = index;
+  }
   let result = "";
   for (let index = 0; index < lines.length; index += 1) {
     let line = lines[index].replace(/\t/g, " ");
@@ -81,7 +86,7 @@ function cleanJsxText(value: string) {
     if (index !== lines.length - 1) line = line.replace(/ +$/, "");
     if (!line) continue;
     result += line;
-    if (index !== lines.length - 1) result += " ";
+    if (index !== lastNonEmptyLine) result += " ";
   }
   return result;
 }
@@ -194,7 +199,7 @@ export function staticUiLocalization(): Plugin {
           // Like TypeScript's getStart(), leading whitespace stays outside the replacement.
           const raw = source.slice(node.start, node.end);
           const start = node.start + (raw.length - raw.trimStart().length);
-          const text = cleanJsxText(source.slice(start, node.end));
+          const text = cleanJsxText(decodeJsxEntities(source.slice(start, node.end)));
           if (containsEnglish(text)) {
             replacements.set(start, {
               end: node.end,
@@ -210,7 +215,7 @@ export function staticUiLocalization(): Plugin {
           const value = node.value as Node | null;
           if (translatableAttributes.test(name) && value) {
             if (value.type === "Literal" && typeof value.value === "string") {
-              const text = source.slice(value.start + 1, value.end - 1);
+              const text = decodeJsxEntities(source.slice(value.start + 1, value.end - 1));
               if (containsEnglish(text)) {
                 replacements.set(value.start, {
                   end: value.end,
