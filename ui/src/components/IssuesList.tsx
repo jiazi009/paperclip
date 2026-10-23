@@ -1,6 +1,7 @@
 import { useShowAgentCreatedTasks } from "../hooks/useShowAgentCreatedTasks";
 import { entityStatusLabel } from "@/lib/entity-labels";
 import { useTranslation } from "@/i18n";
+import { translateUiLiteral } from "@/i18n/LegacyLiteralLocalizer";
 import { useIssueHierarchyContext } from "../hooks/useIssueHierarchyContext";
 import { includeIssueHierarchyContext } from "../lib/issue-hierarchy-context";
 import { AgentIdentity } from "@/components/AgentIdentity";
@@ -1332,7 +1333,7 @@ function StreamlinedIssuesList({
         })
         .map((key) => ({
           key,
-          label: key === "__no_workspace" ? "No Workspace" : (workspaceNameMap.get(key) ?? key.slice(0, 8)),
+          label: key === "__no_workspace" ? translateUiLiteral("No Workspace") : (workspaceNameMap.get(key) ?? key.slice(0, 8)),
           items: groups[key]!,
         }));
     }
@@ -1348,7 +1349,7 @@ function StreamlinedIssuesList({
         })
         .map((key) => ({
           key,
-          label: key === "__no_project" ? "No Project" : (projectById.get(key)?.name ?? key.slice(0, 8)),
+          label: key === "__no_project" ? translateUiLiteral("No Project") : (projectById.get(key)?.name ?? key.slice(0, 8)),
           items: groups[key]!,
         }));
     }
@@ -1363,7 +1364,7 @@ function StreamlinedIssuesList({
         })
         .map((key) => ({
           key,
-          label: key === "__no_parent" ? "No Parent" : (issueTitleMap.get(key) ?? key.slice(0, 8)),
+          label: key === "__no_parent" ? translateUiLiteral("No Parent") : (issueTitleMap.get(key) ?? key.slice(0, 8)),
           items: groups[key]!,
         }));
     }
@@ -1376,9 +1377,9 @@ function StreamlinedIssuesList({
       key,
       label:
         key === "__unassigned"
-          ? "Unassigned"
+          ? translateUiLiteral("Unassigned")
           : key.startsWith("__user:")
-            ? (formatAssigneeUserLabel(key.slice("__user:".length), currentUserId, companyUserLabelMap) ?? "User")
+            ? (formatAssigneeUserLabel(key.slice("__user:".length), currentUserId, companyUserLabelMap) ?? translateUiLiteral("User"))
             : (agentName(key) ?? key.slice(0, 8)),
       items: groups[key]!,
     }));

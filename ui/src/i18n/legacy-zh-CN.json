@@ -11051,5 +11051,8 @@
   "ZIP": "邮政编码",
   "ZodError": "ZodError",
   "Zoom in": "放大",
-  "Zoom out": "缩小"
+  "Zoom out": "缩小",
+  "No Workspace": "无工作区",
+  "No Project": "无项目",
+  "No Parent": "无父级"
 }

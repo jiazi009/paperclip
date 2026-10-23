@@ -762,5 +762,8 @@
   "Created": "已创建",
   "Draft": "草稿",
   "Name": "名称",
-  "Open": "打开"
+  "Open": "打开",
+  "Catch up missed schedule windows after recovery; sub-hourly schedules are combined into one catch-up run, slower schedules replay each missed window up to a cap.": "恢复后补跑错过的计划时间窗口；间隔小于一小时的计划会合并为一次补跑，间隔更长的计划会逐个补跑错过的窗口，直至达到上限。",
+  "Parent": "父级",
+  "No parent": "无父级"
 }

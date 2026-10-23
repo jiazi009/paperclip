@@ -841,8 +841,8 @@ export function Routines() {
             value={activeTab}
             onValueChange={handleLegacyTabChange}
             items={[
-              { value: "routines", label: "Routines" },
-              { value: "runs", label: "Recent Runs" },
+              { value: "routines", label: t("pages.routines.title", { defaultValue: "Routines" }) },
+              { value: "runs", label: t("pages.routines.recentRuns", { defaultValue: "Recent Runs" }) },
             ]}
           />
         </Tabs>
@@ -881,8 +881,8 @@ export function Routines() {
             value={activeTab}
             onValueChange={handleLegacyTabChange}
             items={[
-              { value: "routines", label: "Routines" },
-              { value: "runs", label: "Recent Runs" },
+              { value: "routines", label: t("pages.routines.title", { defaultValue: "Routines" }) },
+              { value: "runs", label: t("pages.routines.recentRuns", { defaultValue: "Recent Runs" }) },
             ]}
           />
         </Tabs>

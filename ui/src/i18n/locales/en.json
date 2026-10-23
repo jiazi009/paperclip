@@ -1501,7 +1501,12 @@
       "movedRoutineToUnfiled": "Moved \"{{title}}\" to Unfiled.",
       "undo": "Undo",
       "itemLabelPluralCapitalized": "Routines",
-      "folderFallback": "folder"
+      "folderFallback": "folder",
+      "concurrencyPolicyDescriptionCoalesceIfActive": "If a run is already active, keep just one follow-up run queued.",
+      "concurrencyPolicyDescriptionAlwaysEnqueue": "Queue every trigger occurrence, even if the routine is already running.",
+      "concurrencyPolicyDescriptionSkipIfActive": "Drop new trigger occurrences while a run is still active.",
+      "catchUpPolicyDescriptionSkipMissed": "Ignore windows that were missed while the scheduler or routine was paused.",
+      "catchUpPolicyDescriptionEnqueueMissedWithCap": "Catch up missed schedule windows after recovery; sub-hourly schedules are combined into one catch-up run, slower schedules replay each missed window up to a cap."
     },
     "routineDetail": {
       "selectCompanyToCreateSecrets": "Select an organization to create secrets",

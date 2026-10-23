@@ -1501,7 +1501,12 @@
       "movedRoutineToUnfiled": "已将“{{title}}”移至“未归档”。",
       "undo": "撤销",
       "itemLabelPluralCapitalized": "例程",
-      "folderFallback": "文件夹"
+      "folderFallback": "文件夹",
+      "concurrencyPolicyDescriptionCoalesceIfActive": "如果已有运行正在进行，只保留一个排队的后续运行。",
+      "concurrencyPolicyDescriptionAlwaysEnqueue": "每次触发都排队执行，即使该例程已在运行。",
+      "concurrencyPolicyDescriptionSkipIfActive": "运行仍在进行时，丢弃新的触发。",
+      "catchUpPolicyDescriptionSkipMissed": "忽略调度器或例程暂停期间错过的时间窗口。",
+      "catchUpPolicyDescriptionEnqueueMissedWithCap": "恢复后补跑错过的计划时间窗口；间隔小于一小时的计划会合并为一次补跑，间隔更长的计划会逐个补跑错过的窗口，直至达到上限。"
     },
     "routineDetail": {
       "selectCompanyToCreateSecrets": "请选择组织以创建密钥",
